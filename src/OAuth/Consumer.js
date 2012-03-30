@@ -99,23 +99,9 @@
                 success = options.success || function () {};
                 failure = options.failure || function () {};
 
-                // According to the spec
-                withFile = (function(){
-                    var hasFile = false;
-                    for(var name in data) {
-                        // Thanks to the FileAPI any file entry
-                        // has a fileName property
-                        if(typeof data[name].fileName != 'undefined') hasFile = true;
-                    }
-
-                    return hasFile;
-                })();
-
-                appendQueryString = options.appendQueryString ? options.appendQueryString : false;
-
-                if (oauth.enablePrivilege) {
-                    netscape.security.PrivilegeManager.enablePrivilege('UniversalBrowserRead UniversalBrowserWrite');
-                }
+                var req_param = this.getUrlAndSetHeaders(options);
+                url = req_param.url;
+                headers = req_param.headers;
 
                 xhr = Request();
                 xhr.onreadystatechange = function () {
@@ -158,6 +144,43 @@
                         }
                     }
                 };
+
+                xhr.open(method, url+'', true);
+
+                for (i in headers) {
+                    xhr.setRequestHeader(i, headers[i]);
+                }
+
+                xhr.send(query);
+            };
+
+            this.getUrlAndSetHeaders = function(options) {
+                var method, url, data, headers, i,
+                    headerParams, signatureMethod, signatureString, signature,
+                    query = [], appendQueryString, signatureData = {}, params, withFile;
+
+                method = options.method || 'GET';
+                url = URI(options.url);
+                data = options.data || {};
+                headers = options.headers || {};
+
+                // According to the spec
+                withFile = (function(){
+                    var hasFile = false;
+                    for(var name in data) {
+                        // Thanks to the FileAPI any file entry
+                        // has a fileName property
+                        if(typeof data[name].fileName != 'undefined') hasFile = true;
+                    }
+
+                    return hasFile;
+                })();
+
+                appendQueryString = options.appendQueryString ? options.appendQueryString : false;
+
+                if (oauth.enablePrivilege) {
+                    netscape.security.PrivilegeManager.enablePrivilege('UniversalBrowserRead UniversalBrowserWrite');
+                }
 
                 headerParams = {
                     'oauth_callback': oauth.callbackUrl,
@@ -232,15 +255,13 @@
                     }
                 }
 
-                xhr.open(method, url+'', true);
+                headers['Authorization'] = 'OAuth ' + toHeaderString(headerParams);
+                headers['X-Requested-With'] = 'XMLHttpRequest';
 
-                xhr.setRequestHeader('Authorization', 'OAuth ' + toHeaderString(headerParams));
-                xhr.setRequestHeader('X-Requested-With','XMLHttpRequest');
-                for (i in headers) {
-                    xhr.setRequestHeader(i, headers[i]);
-                }
-
-                xhr.send(query);
+                return {
+                    url: url+'',
+                    headers: headers
+                };
             };
 
             return this;
