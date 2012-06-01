@@ -155,7 +155,7 @@
             };
 
             this.getUrlAndSetHeaders = function(options) {
-                var method, url, data, headers, i,
+                var method, url, data, headers, i, skipQueryEncode,
                     headerParams, signatureMethod, signatureString, signature,
                     query = [], appendQueryString, signatureData = {}, params, withFile;
 
@@ -163,6 +163,7 @@
                 url = URI(options.url);
                 data = options.data || {};
                 headers = options.headers || {};
+                skipQueryEncode = options.skipQueryEncode || false;
 
                 // According to the spec
                 withFile = (function(){
@@ -211,7 +212,7 @@
                 }
 
                 urlString = url.scheme + '://' + url.host + url.path;
-                signatureString = toSignatureBaseString(method, urlString, headerParams, signatureData);
+                signatureString = toSignatureBaseString(method, urlString, headerParams, signatureData, skipQueryEncode);
 
                 signature = OAuth.signatureMethod[signatureMethod](oauth.consumerSecret, oauth.accessTokenSecret, signatureString);
 
@@ -434,8 +435,9 @@
      * @param query_params {object} A key value paired object of data
      *                               example: {'q':'foobar'}
      *                               for GET this will append a query string
+     * @param skipQueryEncode {boolean} if true skip encoding of query parameters
      */
-    function toSignatureBaseString(method, url, header_params, query_params) {
+    function toSignatureBaseString(method, url, header_params, query_params, skipQueryEncode) {
         var arr = [], i, encode = OAuth.urlEncode;
 
         for (i in header_params) {
@@ -447,7 +449,12 @@
         for (i in query_params) {
             if (query_params[i] !== undefined && query_params[i] !== '') {
                 if (!header_params[i]) {
-                    arr.push([encode(i), encode(query_params[i] + '')]);
+                    if (skipQueryEncode) {
+                        arr.push([i, query_params[i] + '']);
+                    }
+                    else {
+                        arr.push([encode(i), encode(query_params[i] + '')]);
+                    }
                 }
             }
         }
