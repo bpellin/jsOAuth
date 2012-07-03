@@ -4,14 +4,14 @@
      * @constructor
      * @param {String} url
      */
-    function URI(url) {
+    function URI(url, skipQueryEncode) {
         var args = arguments, args_callee = args.callee,
             parsed_uri, scheme, host, port, path, query, anchor,
             parser = /^([^:\/?#]+?:\/\/)*([^\/:?#]*)?(:[^\/?#]*)*([^?#]*)(\?[^#]*)?(#(.*))*/,
             uri = this;
 
         if (!(this instanceof args_callee)) {
-            return new args_callee(url);
+            return new args_callee(url, skipQueryEncode);
         }
 
         uri.scheme = '';
@@ -19,6 +19,7 @@
         uri.port = '';
         uri.path = '';
         uri.query = new QueryString();
+        uri.query.skipQueryEncode = skipQueryEncode;
         uri.anchor = '';
 
         if (url !== null) {
@@ -87,6 +88,8 @@
             }
         }
 
+        querystring.skipQueryEncode = false;
+
         return querystring;
     }
     // QueryString is a type of collection So inherit
@@ -100,7 +103,12 @@
         for (i in self) {
             if (self.hasOwnProperty(i)) {
                 if (i != undefined && self[i] != undefined) {
-                    val = encode(i) + '=' + encode(self[i]);
+                    if (self.skipQueryEncode) {
+                        val = i + '=' + self[i];
+                    }
+                    else {
+                        val = encode(i) + '=' + encode(self[i]);
+                    }
                     q_arr.push(val);
                 }
             }

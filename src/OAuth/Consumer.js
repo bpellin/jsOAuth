@@ -160,10 +160,10 @@
                     query = [], appendQueryString, signatureData = {}, params, withFile;
 
                 method = options.method || 'GET';
-                url = URI(options.url);
                 data = options.data || {};
                 headers = options.headers || {};
                 skipQueryEncode = options.skipQueryEncode || false;
+                url = URI(options.url, skipQueryEncode);
 
                 // According to the spec
                 withFile = (function(){
